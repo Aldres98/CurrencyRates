@@ -14,15 +14,15 @@ import java.net.HttpURLConnection;
  * Created by Aldres on 08.02.2018.
  */
 public class Fetcher {
-    Gson gson;
+    private Gson gson;
 
-    public void registerAdapter() {
+    private void registerAdapter() {
          gson = new GsonBuilder()
                 .registerTypeAdapter(RateObject.class, new RatesDeserializer())
                 .create();
     }
 
-    public ApiResponse getJsonFromUrl (String urlString) throws IOException{
+    public ApiResponse getJsonFromUrl (String urlString){
         registerAdapter();
         ApiResponse response = null;
         HttpURLConnection connection;

@@ -2,6 +2,8 @@ import java.io.*;
 import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Created by Aldres on 08.02.2018.
@@ -10,6 +12,18 @@ public class RateCache {
 
     private File file;
     private String cacheFolder;
+    private final String baseUrl = "http://api.fixer.io/latest?";
+    private Set<ApiResponse> items = new HashSet<>();
+
+    public double getCurrencyRates(String currencyFrom, String currencyTo){
+        makeCacheFile();
+
+        ApiResponse response = (searchItemInCache(new ApiResponse(currencyFrom, currencyTo)));
+        if (response == null) {
+            Fetcher fetcher = new Fetcher();
+            fetcher.getJsonFromUrl(buildUrl(currencyFrom, currencyTo));
+        }
+    }
 
     private void writeToCache(ApiResponse response){
         try {
@@ -23,6 +37,17 @@ public class RateCache {
         } catch (IOException e) {
             System.out.println("Error, while caching: " + e.getMessage());
         }
+
+    }
+
+    private String buildUrl(String currencyFrom, String currencyTo){
+        StringBuilder urlBuilder = new StringBuilder()
+                .append(baseUrl)
+                .append("base=")
+                .append(currencyFrom)
+                .append("&symbols=")
+                .append(currencyTo);
+        return urlBuilder.toString();
 
     }
 
@@ -47,12 +72,25 @@ public class RateCache {
                 item.setBase(singleLine[0]);
                 item.getRates().setName(singleLine[1]);
                 item.getRates().setRate(Double.valueOf(singleLine[2]);
+                items.add(item);
+                br.close();
             }
         } catch (FileNotFoundException e) {
-            e.printStackTrace();
+            System.out.println("Oops, file not found exception occured: " + e.getMessage());
         } catch (IOException e) {
-            e.printStackTrace();
+            System.out.println("Oops, IOException occured: " + e.getMessage());
         }
+
+    }
+
+    private ApiResponse searchItemInCache(ApiResponse item){
+        readCache();
+        for (ApiResponse rateItem : items) {
+            if (rateItem.equals(item)) {
+                return rateItem;
+            }
+        }
+        return null;
     }
 
     private String getCurrentDateFileName() {
@@ -74,7 +112,7 @@ public class RateCache {
         }
     }
 
-    private void createCacheFile() {
+    private void makeCacheFile() {
         String currentFileName = getCurrentDateFileName();
         if (isFileFolderEmpty()) {
             file = new File(cacheFolder = "\\" + currentFileName);
@@ -91,5 +129,4 @@ public class RateCache {
             }
         }
     }
-
 }
