@@ -11,19 +11,19 @@ import java.util.concurrent.Future;
 public class Rate {
     private String[] listOfCurrencies =
             {"AUD", "GBP", "KRW", "SEK",
-            "BGN", "HKD", "MXN", "SGD",
-            "BRL", "HRK", "MYR", "THB",
-            "CAD", "HUF", "NOK", "TRY",
-            "CHF", "IDR", "NZD", "USD",
-            "CNY", "ILS", "PHP", "ZAR",
-            "CZK", "INR", "PLN", "EUR",
-            "DKK", "JPY", "RON", "RUB"};
+                    "BGN", "HKD", "MXN", "SGD",
+                    "BRL", "HRK", "MYR", "THB",
+                    "CAD", "HUF", "NOK", "TRY",
+                    "CHF", "IDR", "NZD", "USD",
+                    "CNY", "ILS", "PHP", "ZAR",
+                    "CZK", "INR", "PLN", "EUR",
+                    "DKK", "JPY", "RON", "RUB"};
 
     private double currencyRate;
     private String currencyFrom;
     private String currencyTo;
 
-    public void start(){
+    public void start() {
         inputData();
         getResult();
 
@@ -39,32 +39,44 @@ public class Rate {
                 currencyFrom = reader.readLine().toUpperCase();
                 System.out.println("Enter to currency: ");
                 currencyTo = reader.readLine().toUpperCase();
-            } catch (IOException e){
+            } catch (IOException e) {
                 System.out.print("IOException: " + e.getMessage());
             }
 
             if (isValid()) {
                 isValid = true;
-            }
-            else {
+            } else {
                 System.out.println("There's no such currency found");
                 System.out.println("Try again! \n");
             }
         } while (!isValid);
     }
 
-    private void getResult(){
-        try {
-            currencyRate = new Fetcher().getJsonFromUrl("http://api.fixer.io/latest?base=RUB&symbols=USD").getRates().getRate();
-        } catch (IOException e) {
-            e.printStackTrace();
+    private void getResult() {
+        ExecutorService service = Executors.newFixedThreadPool(1);
+        Future future = service.submit(new Runnable() {
+
+            @Override
+            public void run() {
+                currencyRate = new RateCache().getCurrencyRates(currencyFrom, currencyTo);
+
+            }
+        });
+        while (!future.isDone()) {
+            System.out.print(".");
+            try {
+                Thread.sleep(10);
+            } catch (InterruptedException e) {
+                System.err.println("InterruptedException");
+            }
         }
-        System.out.println("Currency rate is: " + currencyRate);
+        System.out.format("%n%s -> %s : %.2f%n", currencyFrom, currencyTo, currencyRate);
+        service.shutdown();
     }
 
     private Boolean isValid() {
         int count = 0;
-        if (currencyFrom.equals(currencyTo)){
+        if (currencyFrom.equals(currencyTo)) {
             return false;
         }
 

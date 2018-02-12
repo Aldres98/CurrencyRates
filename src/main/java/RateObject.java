@@ -11,7 +11,12 @@ public class RateObject {
         this.rate = rate;
     }
 
-    public RateObject(){
+    public RateObject(String name) {
+        this.name = name;
+    }
+
+
+    public RateObject() {
 
     }
 
